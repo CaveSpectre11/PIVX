@@ -2305,7 +2305,6 @@ UniValue getautocombineinfo(const UniValue& params, bool fHelp)
 
 UniValue autocombinerewards(const UniValue& params, bool fHelp)
 {
-    string strComment;
     bool fEnable = false;
 
     if (params.size() >= 1) {
