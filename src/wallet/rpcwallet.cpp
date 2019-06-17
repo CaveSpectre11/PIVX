@@ -2264,32 +2264,39 @@ UniValue getstakesplitthreshold(const UniValue& params, bool fHelp)
 
 UniValue getautocombineinfo(const UniValue& params, bool fHelp)
 {
+    string strComment;
+
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getautocombineinfo\n"
             "Returns the autocombinerewards settings\n"
             "\nResult:\n"
-            "1. enabled   (string) The feature turned \"on\" or \"off\".\n"
-            "2. threshold (numeric) If enabled on, returns autocombine threshold.\n"
-            "3. frequency (variable) If enabled, returns frequency in blocks, or \"nextblock\" if one time. "
-                                    "If one time already run, \"startup\" is returned\n");
+            "1. enabled   (boolean) The feature is enabled (true) or disabled (false).\n"
+            "2. threshold (numeric) If enabled, returns autocombine threshold.\n"
+            "3. frequency (numeric) If enabled, returns frequency in blocks.\n"
+            "4. comment   (string)  A human readable state of the settings.\n");
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("enabled", pwalletMain->fCombineDust ? "on" : "off"));
+    obj.push_back(Pair("enabled", pwalletMain->fCombineDust));
+    obj.push_back(Pair("threshold", int(pwalletMain->nAutoCombineThreshold)));
+    obj.push_back(Pair("frequency", int(pwalletMain->nAutoCombineBlockFrequency)));
+
+    if (pwalletMain->nAutoCombineThreshold == 0)
+        strComment = "Enabled for maximum combine, ";
+    else 
+        strComment = "Enabled for ";
+
     if (pwalletMain->fCombineDust) {
-        obj.push_back(Pair("threshold",
-                           int(pwalletMain->nAutoCombineThreshold)));
         if (pwalletMain->nAutoCombineBlockFrequency == 0) {
-            obj.push_back(Pair("frequency", "nextblock"));
+            obj.push_back(Pair("comment", strComment + "one shot on next block"));
         } else {
-            obj.push_back(Pair("frequency",
-                           int(pwalletMain->nAutoCombineBlockFrequency)));
+            obj.push_back(Pair("comment", strComment + "repeat on frequency"));
         }
-    }
-    else {
+    } else {
         if (pwalletMain->nAutoCombineBlockFrequency == 0) {
-            obj.push_back(Pair("threshold", int(pwalletMain->nAutoCombineThreshold)));
-            obj.push_back(Pair("frequency", "startup"));
+            obj.push_back(Pair("comment", strComment + "one shot on startup"));
+        } else {
+            obj.push_back(Pair("comment", "Disabled"));
         }
     }
 
@@ -2298,7 +2305,7 @@ UniValue getautocombineinfo(const UniValue& params, bool fHelp)
 
 UniValue autocombinerewards(const UniValue& params, bool fHelp)
 {
-    string strCommand;
+    string strComment;
     bool fEnable = false;
 
     if (params.size() >= 1) {
@@ -2325,9 +2332,10 @@ UniValue autocombinerewards(const UniValue& params, bool fHelp)
             "3. frequency (numeric, optional) Frequency (in blocks) for autocombine to run (default: 15)\n"
 
             "\nResult:\n"
-            "1. enabled   (string) The feature turned \"on\" or \"off\".\n"
+            "1. enabled   (boolean) The feature turned \"on\" or \"off\".\n"
             "2. threshold (numeric) If enabled on, returns autocombine threshold.\n"
-            "3. frequency (variable) If enabled, returns frequency in blocks, or \"nextblock\" if one time.\n"
+            "3. frequency (numeric) If enabled, returns frequency in blocks, or \"nextblock\" if one time.\n"
+            "4. comment   (string)  A human readable state of the settings.\n"
 
             "\nExamples:\n" +
             HelpExampleCli("autocombinerewards", "true 500 15") + HelpExampleRpc("autocombinerewards", "true 500 15"));
@@ -2353,13 +2361,20 @@ UniValue autocombinerewards(const UniValue& params, bool fHelp)
         throw runtime_error("Changed settings in wallet but failed to save to database\n");
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("enabled", pwalletMain->fCombineDust ? "on" : "off"));
+    obj.push_back(Pair("enabled", pwalletMain->fCombineDust));
     if (pwalletMain->fCombineDust) {
+        if (pwalletMain->nAutoCombineThreshold == 0)
+            strComment = "Enabled for maximum combine, ";
+        else {
+            strComment = "Enabled for ";
+        }
+
         obj.push_back(Pair("threshold", int(pwalletMain->nAutoCombineThreshold)));
+        obj.push_back(Pair("frequency", int(pwalletMain->nAutoCombineBlockFrequency)));
         if (pwalletMain->nAutoCombineBlockFrequency == 0) {
-            obj.push_back(Pair("frequency", "nextblock"));
+            obj.push_back(Pair("comment", strComment + "one shot on next block"));
         } else {
-            obj.push_back(Pair("frequency", int(pwalletMain->nAutoCombineBlockFrequency)));
+            obj.push_back(Pair("comment", strComment + "repeat on frequency"));
         }
     }
 

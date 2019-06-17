@@ -4230,7 +4230,7 @@ void CWallet::AutoCombineDust()
             nTotalRewardsValue += out.Value();
             // Combine until our total is enough above the threshold to remain above after adjustments
             // Unless no threshold is set; in which case we want to keep going until we hit MAX_STANDARD_TX_SIZE
-            if (nAutoCombineThreshold && 
+            if (nAutoCombineThreshold &&
                 ((nTotalRewardsValue - nTotalRewardsValue / 10) > nAutoCombineThreshold * COIN))
                 break;
 
